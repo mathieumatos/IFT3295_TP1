@@ -4,13 +4,14 @@ matchValue = 4
 mismatchValue = -4
 indelValue = -8
 
-S = "GGTCTGAG"
-T = "AAACGA"
+S = "GCCAAAT"
+T = "CAAAGCTA"
+
+print("sequence S = "+str(S))
+print("sequence T = "+str(T))
 
 rows = len(S)+1
 columns = len(T)+1
-
-
 
 def matchScore(i,j):
     if S[i-1] == T[j-1]:
@@ -20,6 +21,9 @@ def matchScore(i,j):
         return mismatchValue
 
 
+# FLECHES DE PROVENANCE / RETRACING DANS BACKTRACKTAB
+# DIAG = 0, LEFT = -1, UP = 1
+
 def findMaxScore(i,j):
     diag = tab[i-1][j-1] + matchScore(i,j)
     up = tab[i-1][j] + indelValue
@@ -27,20 +31,17 @@ def findMaxScore(i,j):
     maximum = max(diag, up, left)
     if maximum == up:
         maxOrigins = 1
-        # maxOrigins.append([i-1,j])
     if maximum == left:
         maxOrigins = -1
-        # maxOrigins.append([i,j-1])
     if maximum == diag:
         maxOrigins = 0
-        # maxOrigins.append([i-1,j-1])
 
     backtrackTab[i][j] = maxOrigins
     
     return maximum
 
 
-######### init du tableau 2d ##########
+################# Initialization des matrices 2d ##################
 
 tab = np.empty((rows,columns), np.int32)
 backtrackTab = np.empty((rows,columns), np.int32)
@@ -53,22 +54,23 @@ for j in range(columns):
     tab[0][j] = 0
     backtrackTab[0][j] = -1
 
-#########################################
+####################################################################
 
 
-######### equations de recurence ##########
+######### Trouver les valeurs dans le tableau ##########
 
 for x in range(rows-1):
     for y in range(columns-1):
         tab[x+1][y+1] = findMaxScore(x+1, y+1)
 
-###########################################
+print(tab)
+print(backtrackTab)
+
+#########################################################
 
 
+#################### Trouver max de la derniere column ######################
 
-### Trouver max de la derniere colonne ###
-
-# je sais, ce n'est pas la meilleure pratique, je suis nouveau avec python, je pourrais mettre -inf à la place
 tempMaxCol = -99999999
 indiceLastCol = -1
 for x in range(i): 
@@ -77,15 +79,15 @@ for x in range(i):
         indiceLastCol = [x,len(T)]
 
 
-print(tempMaxCol)
-print(indiceLastCol)
-###########################################
+print("Maximum value in last column = "+str(tempMaxCol))
+print("Indice of max value in last column = "+str(indiceLastCol))
+
+#############################################################################
 
 
 
-### Trouver max de la derniere colonne ###
+### Trouver max de la derniere row ###
 
-# je sais, ce n'est pas la meilleure pratique, je suis nouveau avec python, je pourrais mettre -inf à la place
 tempMaxRow = -99999999
 indiceLastRow = -1
 for x in range(j): 
@@ -94,8 +96,8 @@ for x in range(j):
         indiceLastRow = [len(S),x]
 
 
-print(tempMaxRow)
-print(indiceLastRow)
+print("Maximum value in last row = "+str(tempMaxRow))
+print("Indice of max value in last row = "+str(indiceLastRow))
 
 ###########################################
 
@@ -117,93 +119,100 @@ else:
     else:
         maxIndice = indiceLastRow
 
-print(maxIndice)
+print("Maximum's Point = "+str(maxIndice))
 
 ############################################
 
 
 
-####### RETRACE ######
+########################## RETRACE #############################
 
-width = maxIndice[0]
-depth = maxIndice[1]
+depth = rows-1
+
+width = columns-1
+print("width = "+str(width)+", depth = "+str(depth))
 
 seqS = ""
 seqT = ""
 
-# while ((width != -1) and (depth != -1)):
-#     print(str(width)+", "+str(depth))
-#     if
+# GGTCTGAG----
+# -----GAAACGA
 
-while ((width > 0) and (depth > 0)):
-    print(str(width)+", "+str(depth))
-    if backtrackTab[width][depth] == 0:
-        seqS = S[width-1] + seqS
-        seqT = T[depth-1] + seqT
+print("RETRACING ...")
+
+while True:
+    print("Retracing from point ("+str(depth)+", "+str(width)+")")
+    if depth == maxIndice[0]:
+        if width == maxIndice[1]:
+            print("Reached Max Point")
+            break
+    if depth != maxIndice[0]:
+        seqS = S[depth-1] + seqS
+        seqT = "-" + seqT
+        depth += -1
+    elif width != maxIndice[1]:
+        seqS = "-" + seqS
+        seqT = T[width-1] + seqT
+        width += -1
+    else:
+        print("error, breaking")
+        break
+
+print("S' = "+seqS)
+print("T' = "+seqT)
+
+while True:
+    print("Retracing from point ("+str(depth)+", "+str(width)+")")
+    if(depth == 0):
+        if(width == 0):
+            print("Reached (0, 0)")
+            break
+    if backtrackTab[depth][width] == 0:
+        seqS = S[depth-1] + seqS
+        seqT = T[width-1] + seqT
         width += -1
         depth += -1
         continue
-    if backtrackTab[width][depth] == 1:
-        seqS = "-" + seqS
-        seqT = T[depth-1] + seqT
-        width += -1
-        continue
-    if backtrackTab[width][depth] == -1:
-        seqS = S[width-1] + seqS
+    elif backtrackTab[depth][width] == 1:
+        seqS = S[depth-1] + seqS
         seqT = "-" + seqT
         depth += -1
         continue
-
-print("jusqua 0")
-print(seqS)
-print(seqT)
-
-
-tempS = ""
-tempT = ""
-
-if width > 0:
-    for x in range(width):
-        tempS += S[x]
-        tempT += "-"
-
-if depth > 0:
-    for x in range(depth):
-        tempS += "-"
-        tempT += T[x]
-
-seqS = tempS + seqS
-seqT = tempT + seqT
-
-for x in range()
-
-print(str(width)+", "+str(depth))
-print(seqS)
-print(seqT)
-
-
-######################
-
-
-print(S)
-print(T)
-print(tab)
-print(backtrackTab)
-
-# print(len(backtrackTab[8][6]))
-# print(backtrackTab[8][6][1][1])
-
-
-jo = 5
-ni = 3
-
-while ((jo != -1) and (ni != -1)):
-    print(str(jo)+", "+str(ni))
-    if(jo == 0):
-        ni += -1
-    elif(ni == 0):
-        jo += -1
+    elif backtrackTab[depth][width] == -1:
+        seqS = "-" + seqS
+        seqT = T[width-1] + seqT
+        width += -1
     else:
-        jo += -1
-        ni += -1
+        print("Error in either backtrack table or depth/width calculation")
+        break
 
+print("S' = "+seqS)
+print("T' = "+seqT)
+
+##################################################################
+
+
+########################### SCORE ############################
+
+score = 0
+
+if len(seqS) != len(seqT):
+    print("Error calculating score, lengths of sequences not the same")
+else:
+    for x in range(len(seqS)):
+        if seqS[x] == seqT[x]:
+            score += matchValue
+            continue
+        elif ((seqS[x] == "-") or (seqT[x] == "-")):
+            score += indelValue
+            continue
+        else:
+            score += mismatchValue
+            continue
+
+# print("match value = "+str(matchValue))
+# print("mismatch value = "+str(mismatchValue))
+# print("indel value = "+str(indelValue))
+print("final score = "+str(score)) 
+
+#############################################################
