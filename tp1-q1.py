@@ -2,6 +2,7 @@ import numpy as np
 import sys
 
 input = open('reads.fq','r')
+output = open('edgelist.txt', 'w')
 
 def calcScore(S,T):
     matchValue = 4
@@ -68,8 +69,8 @@ def calcScore(S,T):
         for y in range(columns-1):
             tab[x+1][y+1] = findMaxScore(x+1, y+1)
 
-    print(tab)
-    print(backtrackTab)
+    # print(tab)
+    # print(backtrackTab)
 
     #########################################################
 
@@ -124,7 +125,7 @@ def calcScore(S,T):
     #     else:
     #         maxIndice = indiceLastRow
 
-    # print("Maximum's Point = "+str(maxIndice))
+    print("Maximum's Point = "+str(indiceLastRow))
 
     ############################################
 
@@ -143,13 +144,15 @@ def calcScore(S,T):
     # GGTCTGAG----
     # -----GAAACGA
 
-    print("RETRACING ...")
+    # print("RETRACING ...")
 
     while True:
-        print("Retracing from point ("+str(depth)+", "+str(width)+")")
+        # print("Retracing from point ("+str(depth)+", "+str(width)+")")
         if depth == indiceLastRow[0]:
             if width == indiceLastRow[1]:
                 print("Reached Max Point")
+                sizeChev = width
+                print("Size Chevauchement = "+str(sizeChev))
                 break
         if depth != indiceLastRow[0]:
             seqS = S[depth-1] + seqS
@@ -163,8 +166,8 @@ def calcScore(S,T):
             print("error, breaking")
             break
 
-    print("S' = "+seqS)
-    print("T' = "+seqT)
+    # print("S' = "+seqS)
+    # print("T' = "+seqT)
 
     while True:
         print("Retracing from point ("+str(depth)+", "+str(width)+")")
@@ -188,7 +191,7 @@ def calcScore(S,T):
             seqT = T[width-1] + seqT
             width += -1
         else:
-            print("Error in either backtrack table or depth/width calculation")
+            # print("Error in either backtrack table or depth/width calculation")
             break
 
     print("S' = "+seqS)
@@ -198,17 +201,66 @@ def calcScore(S,T):
 
 
     ########################### SCORE ############################
+    print("Length of seq = "+str(len(seqS)))
+
+    if seqS[0] == "-":
+        for x in range(len(seqS)-1):
+            if seqS[x] != "-":
+                begin = x
+                print("begin from S' = "+str(begin))
+                break
+    elif seqT[0] == "-":
+        for x in range(len(seqT)-1):
+            if seqT[x] != "-":
+                begin = x
+                print("begin from T' = "+str(begin))
+                break
+    else:
+        begin = 0
+        sizeChev = len(seqS)
+
+    end = begin + sizeChev
 
     score = 0
+    
+    # if seqS[0] != "-" and seqS[len(seqS)-1] != "-":
+    #     begin = 0
+    #     end = len(seqS)-1
+    # elif seqS[0] == "-":
+    #     print("SeqS starts with indel")
+    #     for x in range(len(seqS)):
+    #         if seqS[x] != "-":
+    #             begin = x
+    #             break
+    #     for x in xrange(len(seqT)-1, 0, -1):
+    #         if seqT[x] != "-":
+    #             end = x
+    #             break
+    # else:
+    #     print("seqS does not start with indel")
+    #     for x in range(len(seqT)):
+    #         if seqT[x] != "-":
+    #             begin = x
+    #             break
+    #     for x in xrange(len(seqS)-1, 0, -1):
+    #         if seqS[x] != "-":
+    #             end = x
+    #             break
 
+    # print("begin = "+str(begin))
+    # print("end = "+str(end))
+
+    print("Begin = "+str(begin))
+    print("End = "+str(end))
     if len(seqS) != len(seqT):
         print("Error calculating score, lengths of sequences not the same")
     else:
-        for x in range(len(seqS)):
+        for x in range(begin, end, 1):
             if seqS[x] == seqT[x]:
                 score += matchValue
                 continue
             elif ((seqS[x] == "-") or (seqT[x] == "-")):
+                score += indelValue
                 continue
             else:
                 score += mismatchValue
@@ -239,13 +291,16 @@ scoreArray = np.empty((l,l), np.int32)
 
 for i in range(l):
     for j in range(l):
-        scoreArray[i][j] = calcScore(seqArray[i],seqArray[j])
+        if i == j:
+            scoreArray[i][i] = 0
+        else:
+            scoreArray[i][j] = calcScore(seqArray[i],seqArray[j])
+            print(str(i)+", "+str(j))
+        
+        if scoreArray[i][j] >= 80:
+            output.write("seq"+str(i+1)+" seq"+str(j+1)+" "+str(scoreArray[i][j])+"\n")
 
-for i in range(l):
-    scoreArray[i][i] = 0
 
 print(scoreArray)
     
-
-# print(seqArray)
 
